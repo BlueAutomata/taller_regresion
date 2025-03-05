@@ -1,0 +1,23 @@
+---
+title: "Possum Regression"
+author: "Guillermo Luigui Ubaldo Nieto Angarita, "
+date: "2025-03-05"
+output: html_document
+---
+
+# Taller Regresión Zarigüeya
+
+Es fundamental que el proyecto considere, como mínimo, los siguientes tópicos:
+- Objetivo del análisis estadístico del conjunto de datos
+- Descripción del contexto al que pertenecen los datos
+- Descripción y escala de medición de las variables consideradas
+- El análisis descriptivo de los datos
+- Estimación de modelos de regresión y su interpretación
+- Comparación de modelos
+- Validación de supuestos
+- Análisis diagnóstico
+
+```{r}
+plot(cars)
+```
+
