@@ -1,6 +1,6 @@
 ---
 title: "Possum Regression"
-author: "Guillermo Luigui Ubaldo Nieto Angarita, "
+author: "Guillermo Luigui Ubaldo Nieto Angarita, Daniel Hernando Moyano Salamanca, Jairo Antonio Viteri Rojas"
 date: "2025-03-05"
 output: html_document
 ---
@@ -17,7 +17,68 @@ Es fundamental que el proyecto considere, como mínimo, los siguientes tópicos:
 - Validación de supuestos
 - Análisis diagnóstico
 
+## Paso 1: Contexto
+
+## Paso 2: Problema
+
+## Paso 3: Objetivos
+
+## Paso 4: Instalar Liberias
+
+## Psso 5: Cargar Liberias
 ```{r}
-plot(cars)
+library(ggplot2)
+```
+## Paso 6: Importación de Datos y Lectura del Conjunto de Datos
+### Paso 6.1: Asignar la ruta de los datos
+```{r}
+setwd("..")
+path <- getwd()
+file_path <- file.path(path, "data", "possum.csv")
+print(file_path)
+```
+
+
+### Paso 6.2: Importar los datos 
+```{r}
+data <- read.csv(file_path)
+```
+
+
+## Paso 7: Analizando los Datos
+### Paso 7.1: Inspección Básica de Datos
+```{r}
+print(dim(data))
+```
+```{r}
+head(data)
+```
+
+```{r}
+tail(data)
+```
+
+### Paso 7.2: Resumen Estadístico Básico
+```{r}
+summary(data)
+```
+
+## Paso 8: Gestión de Duplicados y Valores Faltantes
+### Paso 8.1: Gestión de Duplicados
+#### Paso 8.1.1: Identificación de Duplicados
+```{r}
+duplicates <- duplicated(data)
+sum(duplicates)
+```
+
+## Paso 9: Reducción de Datos
+```{r}
+head(data)
+```
+
+
+```{r}
+data <- data[, !(names(data) %in% c("case"))]
+head(data)
 ```
 
