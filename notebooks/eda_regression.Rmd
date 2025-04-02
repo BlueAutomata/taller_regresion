@@ -46,6 +46,7 @@ library(car)
 library(dplyr)
 library(tidyr)
 library(patchwork)
+library(reshape2)
 ```
 ## Paso 6: Importación de Datos y Lectura del Conjunto de Datos
 ### Paso 6.1: Asignar la ruta de los datos
@@ -529,16 +530,6 @@ https://rpubs.com/acastro/regresion_lineal_supuestos
 3. Varianza constante (Homocedasticidad)
 4. Independencia
 
-```{r}
-numeric_results_df
-```
-
-
-
-```{r}
-results_df 
-```
-
 
 
 ```{r}
@@ -593,7 +584,7 @@ ggplot(residual_data, aes(x = Fitted, y = Residuals, color = Model)) +
 
 ```{r}
 # Create empty list to store results
-normality_results <- list()s
+normality_results <- list()
 
 # Run Lilliefors test for each model
 for (i in 1:4) {
@@ -704,12 +695,37 @@ plot_list <- lapply(1:4, function(i) {
 ##### Paso 15.2.4.2: Breusch-Pagan Test
 
 ```{r}
-# Breusch-Pagan test for homoscedasticity
-bp_test <- bptest(model1)
-
-# Print the results
-print(bp_test)
+for (i in 1:4) {
+  model <- get(paste0("linear_model", i))
+  bp_test <- bptest(model)
+  
+  cat("\n--- Model", i, "---\n")
+  print(bp_test)
+}
 ```
+
+```{r}
+plot_list <- lapply(1:4, function(i) {
+  model <- get(paste0("linear_model", i))
+  ggplot(data.frame(Fitted = fitted(model),
+                   Residuals = residuals(model)),
+         aes(Fitted, Residuals)) +
+    geom_point(alpha = 0.6) +
+    geom_smooth(method = "loess", color = "red", se = FALSE) +
+    labs(title = paste("Model", i, 
+                      ifelse(bptest(model)$p.value < 0.05, 
+                             "(Heteroskedastic)", 
+                             "(Homoskedastic)")),
+         x = "Fitted Values",
+         y = "Residuals") +
+    theme_minimal()
+})
+
+# Combine plots
+(plot_list[[1]] | plot_list[[2]]) / 
+(plot_list[[3]] | plot_list[[4]])
+```
+
 
 
 ### Paso 15.2.5: Prueba de Independencia
