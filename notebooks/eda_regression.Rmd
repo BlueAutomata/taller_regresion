@@ -34,7 +34,18 @@ Es fundamental que el proyecto considere, como mínimo, los siguientes tópicos:
 
 ## Psso 5: Cargar Liberias
 ```{r}
+library(rlang)
 library(ggplot2)
+library(corrplot)
+library(vcd)
+library(broom)
+library(effectsize)
+library(nortest)
+library(lmtest)
+library(car)
+library(dplyr)
+library(tidyr)
+library(patchwork)
 ```
 ## Paso 6: Importación de Datos y Lectura del Conjunto de Datos
 ### Paso 6.1: Asignar la ruta de los datos
@@ -80,12 +91,672 @@ sum(duplicates)
 
 ## Paso 9: Reducción de Datos
 ```{r}
+data <- data[, !(names(data) %in% c("case"))]
 head(data)
+```
+
+## Paso 10: Limpieza y Manipulación de Datos
+### Paso 10.1: minusculas
+
+```{r}
+data$Pop <- tolower(data$Pop)
+```
+
+
+## Paso 10.2: Identificar tipos de columnas
+
+```{r}
+# Identificar tipos de columnas
+numeric_columns <- names(data)[sapply(data, is.numeric)]
+categorical_columns <- names(data)[sapply(data, is.character) | sapply(data, is.factor)]
+
+# Clasificar variables numéricas en discretas o continuas
+discrete_columns <- names(data)[sapply(data, function(x) is.numeric(x) && all(x == floor(x), na.rm = TRUE))]
+continuous_columns <- setdiff(numeric_columns, discrete_columns)
+
+# Clasificar variables categóricas en nominales u ordinales
+ordinal_columns <- names(data)[sapply(data, is.ordered)]
+nominal_columns <- setdiff(categorical_columns, ordinal_columns)
+
+target_column <- "hdlngth"
+print("Variable Objetivo:")
+print(target_column)
+
+# Imprimir resultados
+print("Numéricas Discretas:")
+print(discrete_columns)
+
+print("Numéricas Continuas:")
+print(continuous_columns)
+
+print("Categóricas Ordinales:")
+print(ordinal_columns)
+
+print("Categóricas Nominales:")
+print(nominal_columns)
+```
+
+
+## Paso 9: Resumen Estadístico
+### Paso 9.1: Resumen
+```{r}
+summary(data)
+```
+
+
+### Paso 9.2: Tendencia Central
+```{r}
+if (!require(moments)) install.packages("moments", dependencies = TRUE)
+library(moments)
+
+summary_stats <- function(column) {
+  mean_val <- mean(column, na.rm = TRUE)
+  median_val <- median(column, na.rm = TRUE)
+  mode_val <- as.numeric(names(sort(table(column), decreasing = TRUE))[1])  # Moda
+  
+  std_dev <- sd(column, na.rm = TRUE)
+  variance <- var(column, na.rm = TRUE)
+  
+  range_val <- max(column, na.rm = TRUE) - min(column, na.rm = TRUE)
+  iqr_val <- IQR(column, na.rm = TRUE)
+  
+  skewness_val <- skewness(column, na.rm = TRUE)
+  kurtosis_val <- kurtosis(column, na.rm = TRUE)
+  
+  return(c(mean = mean_val, median = median_val, mode = mode_val, 
+           std_dev = std_dev, variance = variance, range = range_val, iqr = iqr_val,
+           skewness = skewness_val, kurtosis = kurtosis_val))
+}
+
+numeric_columns <- data[sapply(data, is.numeric)]
+result <- as.data.frame(t(sapply(numeric_columns, summary_stats)))
+
+print(result)
+```
+
+
+## Paso 11: Análisis Univariado
+### Paso 11.1: Análisis Univeriado de Variables Categorías
+#### Paso 11.1.1: Análisis Univeriado de Variables Nominales
+
+```{r}
+for (column in categorical_columns) {
+  p <- ggplot(data = data, aes(x = !!sym(column))) +
+    geom_bar()
+  print(p)
+}
+```
+
+### Paso 11.2: Análisis Univeriado de Variables Númericas
+#### Paso 11.2.1: Análisis Univeriado de Variables Discretas
+
+```{r}
+for (column in discrete_columns) {
+  p <- ggplot(data = data, aes(x = !!sym(column))) +
+    geom_bar()
+  print(p)
+}
+```
+
+
+#### Paso 11.2.2: Análisis Univeriado de Variables Continuas
+
+```{r}
+for (column in continuous_columns) {
+  p <- ggplot(data = data, aes(x = !!sym(column))) + 
+    geom_histogram()
+  print(p)
+}
+```
+
+
+## Paso 12: Análisis Bivariado
+### Paso 12.1: Análisis Bivariado de Variables Categorías
+#### Paso 12.1.1: Análisis Bivariado de Variables Nominales
+##### Paso 12.1.1.1: Box Plots
+
+```{r}
+for (column in categorical_columns) {
+  p <- ggplot(data = data, aes(x = !!sym(column), y = !!sym(target_column))) + 
+    geom_boxplot()
+  print(p)
+}
+```
+
+##### Paso 12.1.1.1: Kernel Density plots 
+
+```{r}
+for (column in categorical_columns) {
+  p <- ggplot(data = data, aes(x = !!sym(target_column), fill = !!sym(column))) + 
+    geom_density(alpha = 0.4)
+  print(p)
+}
+```
+
+
+### Paso 12.2: Análisis Bivariado de Variables Númericas
+#### Paso 12.2.1: Análisis Univeriado de Variables Discretas
+##### Paso 12.2.1.1: Box Plots
+
+```{r}
+for (column in discrete_columns) {
+  p <- ggplot(data = data, aes(x = factor(!!sym(column)), y = !!sym(target_column))) + 
+    geom_boxplot() +
+    xlab(column) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  
+  print(p)
+}
+```
+
+
+##### Paso 12.2.1.1: Kernel Density plots
+
+```{r}
+for (column in discrete_columns) {
+  p <- ggplot(data = data, aes(x = !!sym(target_column), fill = factor(!!sym(column)))) + 
+    geom_density(alpha = 0.4)
+  print(p)
+}
+```
+
+
+#### Paso 12.2.2: Análisis Univeriado de Variables Continuas
+
+```{r}
+for (column in continuous_columns) {
+  if (column != target_column) {
+    p <- ggplot(data = data, aes(x = !!sym(column), y = !!sym(target_column))) + 
+      geom_point()
+    print(p)
+  }
+}
+```
+
+
+## Paso 13: Multivariate Analysis
+
+```{r}
+correlation_matrix <- cor(data[, names(numeric_columns)], use = "pairwise.complete.obs")
+print(correlation_matrix)
+
+```
+
+```{r}
+corrplot(correlation_matrix, method = "color", tl.cex = 0.8)
 ```
 
 
 ```{r}
-data <- data[, !(names(data) %in% c("case"))]
-head(data)
+library(dplyr)
+
+# Create a pairwise chi-square test for all categorical variables
+chi_square_results <- expand.grid(categorical_columns, categorical_columns) %>%
+  filter(Var1 != Var2) %>%
+  mutate(chi2_p_value = mapply(function(x, y) {
+    table_data <- table(data[[x]], data[[y]])
+    chisq.test(table_data)$p.value
+  }, Var1, Var2))
+
+print(chi_square_results)
+
 ```
+
+
+```{r}
+
+
+for (i in 1:(length(categorical_columns)-1)) {
+  for (j in (i+1):length(categorical_columns)) {
+    formula <- as.formula(paste("~", categorical_columns[i], "+", categorical_columns[j]))
+    mosaic(formula, data = data, shade = TRUE, legend = TRUE)
+  }
+}
+
+```
+
+```{r}
+# Example: Assume numeric_columns contains the names of numeric variables
+numeric_data <- data[names(numeric_columns)]
+
+# Compute p-values using nested sapply() with proper indexing
+cor_pvalues <- sapply(seq_along(numeric_columns), function(i) {
+  sapply(seq_along(numeric_columns), function(j) {
+    if (i != j) {
+      cor.test(numeric_data[[i]], numeric_data[[j]])$p.value
+    } else {
+      NA
+    }
+  })
+})
+
+# Convert to matrix and set row/column names
+cor_pvalues <- as.matrix(cor_pvalues)
+rownames(cor_pvalues) <- colnames(cor_pvalues) <- names(numeric_columns)
+
+# Print the matrix of p-values
+print(cor_pvalues)
+```
+```{r}
+
+# Melt the matrix into long format
+pvalue_melted <- melt(cor_pvalues, na.rm = TRUE)
+
+# Add a column for significance (e.g., p < 0.05)
+pvalue_melted$significant <- ifelse(pvalue_melted$value < 0.05, "Yes", "No")
+
+# Optional: Add asterisks for significance levels
+pvalue_melted$label <- ifelse(
+  pvalue_melted$value < 0.001, "***",
+  ifelse(pvalue_melted$value < 0.01, "**",
+         ifelse(pvalue_melted$value < 0.05, "*", ""))
+)
+```
+
+
+```{r}
+ggplot(pvalue_melted, aes(x = Var1, y = Var2, fill = significant)) +
+  geom_tile(color = "white") +
+  geom_text(aes(label = label), color = "black", size = 4) +  # Add asterisks
+  scale_fill_manual(values = c("Yes" = "#FF6B6B", "No" = "#C4DDFF")) +
+  labs(
+    title = "Statistical Significance of Pairwise Correlations",
+    x = "", y = "", fill = "Significant (p < 0.05)"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    plot.title = element_text(hjust = 0.5)
+  )
+```
+
+```{r}
+# Extract numeric variables (excluding 'hdlngth' to avoid self-correlation)
+numeric_vars <- names(data)[sapply(data, is.numeric)]
+numeric_vars <- numeric_vars[numeric_vars != "hdlngth"]  # Remove target
+
+# Compute correlations and p-values between 'hdlngth' and all other numeric vars
+results <- sapply(numeric_vars, function(var) {
+  test <- cor.test(data$hdlngth, data[[var]])
+  c(correlation = test$estimate, pvalue = test$p.value)
+})
+
+# Transpose and convert to dataframe
+results_df <- as.data.frame(t(results))
+results_df$variable <- rownames(results_df)
+```
+
+
+```{r}
+# Step 1: Compute correlations with hdlngth
+numeric_vars <- names(data)[sapply(data, is.numeric)]
+numeric_vars <- numeric_vars[numeric_vars != "hdlngth"]  # Exclude target
+
+results <- lapply(numeric_vars, function(var) {
+  test <- cor.test(data$hdlngth, data[[var]])
+  data.frame(
+    variable = var,
+    cor = test$estimate,
+    pvalue = test$p.value
+  )
+})
+
+numeric_results_df <- do.call(rbind, results)
+
+# Step 2: Create the plot (fixed version)
+ggplot(numeric_results_df, aes(x = reorder(variable, cor), y = cor, 
+                      fill = pvalue < 0.05)) +
+  geom_col() +  # Use geom_col() instead of geom_bar(stat = "identity")
+  geom_text(aes(label = ifelse(pvalue < 0.05, "*", "")), 
+            vjust = 0.5, hjust = ifelse(numeric_results_df$cor > 0, -0.2, 1.2),
+            size = 5, color = "black") +
+  scale_fill_manual(values = c("TRUE" = "#FF6B6B", "FALSE" = "#C4DDFF"),
+                    name = "Significant\n(p < 0.05)") +
+  labs(
+    title = "Correlation with hdlngth",
+    x = "Variable",
+    y = "Pearson's r"
+  ) +
+  coord_flip() +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+
+```{r}
+# Step 0: Verify hdlngth exists
+if(!"hdlngth" %in% names(data)) {
+  stop("Error: 'hdlngth' column not found in the dataset")
+}
+
+# Step 1: Identify categorical variables (factors/characters with <10 unique values)
+cat_vars <- names(data)[sapply(data, function(x) {
+  (is.factor(x) | is.character(x)) & n_distinct(x, na.rm = TRUE) < 10
+})]
+
+# Remove NA-only variables
+cat_vars <- cat_vars[sapply(cat_vars, function(x) !all(is.na(data[[x]])))]
+
+# Step 2: Statistical tests with error handling
+
+
+results <- lapply(cat_vars, function(var) {
+  tryCatch({
+    if (n_distinct(data[[var]], na.rm = TRUE) == 2) {
+      # t-test for binary variables
+      test <- t.test(data$hdlngth ~ data[[var]])
+      data.frame(
+        variable = var,
+        method = "t-test",
+        p.value = test$p.value,
+        effect_size = cohens_d(data$hdlngth ~ data[[var]])$Cohens_d
+      )
+    } else {
+      # ANOVA for 3+ categories
+      model <- aov(data$hdlngth ~ factor(data[[var]]))
+      p.value <- summary(model)[[1]]$"Pr(>F)"[1]
+      data.frame(
+        variable = var,
+        method = "ANOVA",
+        p.value = p.value,
+        effect_size = eta_squared(model)$Eta2
+      )
+    }
+  }, error = function(e) {
+    data.frame(
+      variable = var,
+      method = NA_character_,
+      p.value = NA_real_,
+      effect_size = NA_real_
+    )
+  })
+})
+
+# Combine results and remove failed tests
+results_df <- do.call(rbind, results) %>% 
+  filter(!is.na(method))
+```
+```{r}
+library(ggplot2)
+library(dplyr)
+
+# Plot 1: Statistical significance
+ggplot(results_df, aes(x = reorder(variable, -p.value), 
+                     y = -log10(p.value), 
+                     fill = p.value < 0.05)) +
+  geom_col(width = 0.7) +
+  geom_hline(yintercept = -log10(0.05), linetype = "dashed", color = "red") +
+  geom_text(aes(label = ifelse(p.value < 0.05, "*", "")), 
+            size = 6, vjust = 0.7, hjust = -0.2) +
+  scale_fill_manual(values = c("TRUE" = "#ff6b6b", "FALSE" = "#7fcdbb")) +
+  labs(title = "Relationship Between hdlngth and Categorical Variables",
+       subtitle = "Dashed line shows p = 0.05 significance threshold",
+       x = NULL,
+       y = "-log10(p-value)") +
+  coord_flip() +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "top")
+
+# Plot 2: Effect sizes
+ggplot(results_df, aes(x = reorder(variable, abs(effect_size)), 
+                     y = effect_size, 
+                     fill = p.value < 0.05)) +
+  geom_col(width = 0.7) +
+  geom_hline(yintercept = 0, linetype = "solid") +
+  scale_fill_manual(values = c("TRUE" = "#ff6b6b", "FALSE" = "#7fcdbb")) +
+  labs(title = "Effect Sizes for Categorical Variables",
+       x = NULL,
+       y = ifelse(all(results_df$method == "t-test"), 
+                  "Cohen's d", 
+                  "Eta-squared")) +
+  coord_flip() +
+  theme_minimal(base_size = 14)
+```
+
+## Paso 14: Pruebas de hipótesis
+
+
+
+## Paso 15: Modelamiento
+### Paso 15.1: Entrenamiento
+
+### Paso 15.2: Pruebas de supuestos
+#### Paso 15.2.1: Supuestos de regresion lineal
+https://rpubs.com/acastro/regresion_lineal_supuestos
+
+1. Linealidad
+2. Normalidad
+3. Varianza constante (Homocedasticidad)
+4. Independencia
+
+```{r}
+numeric_results_df
+```
+
+
+
+```{r}
+results_df 
+```
+
+
+
+```{r}
+linear_model1 <- lm(hdlngth ~ ., data = data)
+summary(linear_model1)
+```
+
+
+```{r}
+linear_model2 <- lm(hdlngth ~ age + skullw + totlngth + taill + footlgth + eye + chest + belly + Pop, data = data)
+summary(linear_model2)
+```
+
+
+```{r}
+linear_model3 <- lm(hdlngth ~ skullw + totlngth + taill + footlgth + Pop, data = data)
+summary(linear_model3)
+```
+```{r}
+linear_model4 <- lm(hdlngth ~ skullw + totlngth, data = data)
+summary(linear_model4)
+```
+
+
+#### Paso 15.2.2: Prueba de Linealidad
+
+```{r}
+# Create combined data frame
+residual_data <- lapply(1:4, function(i) {
+  model <- get(paste0("linear_model", i))
+  data.frame(
+    Model = paste("Model", i),
+    Fitted = model$fitted.values,
+    Residuals = residuals(model)
+  )
+}) %>% bind_rows()
+
+# Create plot
+ggplot(residual_data, aes(x = Fitted, y = Residuals, color = Model)) +
+  geom_point(alpha = 0.6) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  facet_wrap(~Model, ncol = 2) +
+  labs(title = "Residuals vs Fitted Values Comparison",
+       x = "Fitted Values",
+       y = "Residuals") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+
+#### Paso 15.2.3: Prueba de Normalidad
+
+```{r}
+# Create empty list to store results
+normality_results <- list()s
+
+# Run Lilliefors test for each model
+for (i in 1:4) {
+  model <- get(paste0("linear_model", i))
+  e <- residuals(model)
+  normality_results[[i]] <- lillie.test(e)
+  
+  cat("\n--- Model", i, "---\n")
+  print(normality_results[[i]])
+  
+
+
+# Create summary table
+normality_summary <- lapply(1:4, function(i) {
+  model <- get(paste0("linear_model", i))
+  test_result <- lillie.test(residuals(model))
+  data.frame(
+    Model = paste("Model", i),
+    Statistic = test_result$statistic,
+    p.value = test_result$p.value,
+    Normality = ifelse(test_result$p.value > 0.05, "Normal", "Non-normal")
+  )
+}) %>% bind_rows()
+
+# Print formatted table
+print(normality_summary)
+}
+```
+
+```{r}
+# Create list of plots
+plot_list <- lapply(1:4, function(i) {
+  model <- get(paste0("linear_model", i))
+  ggplot(data.frame(res = residuals(model)), 
+         aes(sample = res)) +
+    stat_qq() +
+    stat_qq_line(color = "red") +
+    labs(title = paste("Model", i), 
+         x = "Theoretical Quantiles",
+         y = "Sample Quantiles")
+})
+
+# Combine plots
+(plot_list[[1]] | plot_list[[2]]) / 
+(plot_list[[3]] | plot_list[[4]])
+```
+
+```{r}
+library(car)
+
+# Set up 2x2 plot layout
+par(mfrow = c(2, 2), mar = c(4, 4, 2, 1))  # Adjust margins
+
+# Create QQ-plots for each model
+for (i in 1:4) {
+  model <- get(paste0("linear_model", i))
+  qqPlot(residuals(model), 
+         main = paste("Model", i, "QQ Plot"),
+         ylab = "Residuals",
+         envelope = 0.95,  # 95% confidence band
+         col.lines = "red",
+         id = FALSE)  # Turn off point labeling
+}
+
+# Reset layout
+par(mfrow = c(1, 1))
+```
+
+
+
+#### Paso 15.2.4: Prueba de Varianza Constante
+##### Paso 15.2.4.1: Goldfeld-Quandt Test
+
+```{r}
+# Create empty list to store results
+gq_results <- list()
+
+# Run Goldfeld-Quandt test for each model
+for (i in 1:4) {
+  model <- get(paste0("linear_model", i))
+  gq_results[[i]] <- gqtest(model)
+  
+  cat("\n--- Model", i, "---\n")
+  print(gq_results[[i]])
+}
+```
+
+
+```{r}
+plot_list <- lapply(1:4, function(i) {
+  model <- get(paste0("linear_model", i))
+  ggplot(data.frame(Fitted = fitted(model),
+                   Residuals = residuals(model)),
+         aes(x = Fitted, y = Residuals)) +
+    geom_point(alpha = 0.6) +
+    geom_smooth(method = "loess", color = "red", se = FALSE) +
+    labs(title = paste("Model", i),
+         x = "Fitted Values",
+         y = "Residuals") +
+    theme_minimal()
+})
+
+# Combine plots
+(plot_list[[1]] | plot_list[[2]]) / 
+(plot_list[[3]] | plot_list[[4]])
+```
+
+##### Paso 15.2.4.2: Breusch-Pagan Test
+
+```{r}
+# Breusch-Pagan test for homoscedasticity
+bp_test <- bptest(model1)
+
+# Print the results
+print(bp_test)
+```
+
+
+### Paso 15.2.5: Prueba de Independencia
+
+```{r}
+# Create empty list to store results
+dw_results <- list()
+
+# Run Durbin-Watson test for each model
+for (i in 1:4) {
+  model <- get(paste0("linear_model", i))
+  dw_results[[i]] <- durbinWatsonTest(model)
+  
+  cat("\n--- Model", i, "---\n")
+  print(dw_results[[i]])
+}
+```
+
+```{r}
+plot_list <- lapply(1:4, function(i) {
+  model <- get(paste0("linear_model", i))
+  ggplot(data.frame(Order = 1:length(residuals(model)),
+                   Residuals = residuals(model)),
+         aes(x = Order, y = Residuals)) +
+    geom_point() +
+    geom_line(alpha = 0.5) +
+    geom_smooth(method = "loess", color = "red", se = FALSE) +
+    labs(title = paste("Model", i, "Residuals"),
+         x = "Observation Order",
+         y = "Residuals") +
+    theme_minimal()
+})
+
+# Combine plots
+(plot_list[[1]] | plot_list[[2]]) / 
+(plot_list[[3]] | plot_list[[4]])
+```
+
+
+
+### Paso 15.3: Evaluación
+1. MSE
+2. MAD
+3. MAPE
+4. R2
+5. AIC
+6. BIC
+
+
 
