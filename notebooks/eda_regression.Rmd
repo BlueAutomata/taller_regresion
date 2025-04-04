@@ -7,16 +7,6 @@ output: html_document
 
 # Taller Regresión Zarigüeya
 
-Es fundamental que el proyecto considere, como mínimo, los siguientes tópicos:
-- Objetivo del análisis estadístico del conjunto de datos
-- Descripción del contexto al que pertenecen los datos
-- Descripción y escala de medición de las variables consideradas
-- El análisis descriptivo de los datos
-- Estimación de modelos de regresión y su interpretación
-- Comparación de modelos
-- Validación de supuestos
-- Análisis diagnóstico
-
 ## Paso 1: Contexto y descripción de variables
 
 El presente trabajo, para la asignatura Modelos Avanzados de Machine Learning, se desarrolló con base en el conjunto de datos “possum.csv” que proviene originalmente del paquete DAAG R, que contiene conjuntos de datos utilizados en ejemplos y ejercicios para práctica clásica de regresión, en el libro Maindonald, J.H. y Braun, W.J. (2003, 2007, 2010) "Data Analysis and Graphics Using R", y también se ha usado en el capítulo 8 del libro “OpenIntro Statistics”: Introduction to linear regression.
@@ -50,11 +40,9 @@ chest: perímetro torácico (cm).
 
 belly: perímetro abdominal (cm).
 
-
-
 ## Paso 2: Problema
 
-El objetivo de este trabajo desarrollar 4 modelos de regresión lineal múltiple, usando diferentes conjuntos de variables del dataframe y encontrar el más adecuado para predecir el tamaño de la cabeza de una zarigüeya.
+Predecir la longitud de la cabeza de una zarigüeya mediante la construcción de cuatro modelos de regresión lineal múltiple, utilizando diferentes combinaciones de variables, con el fin de identificar el modelo más preciso y adecuado.
 
 ## Paso 3: Objetivos
 
@@ -64,16 +52,19 @@ Desarrollar y comparar cuatro modelos de regresión lineal múltiple (RLM) para 
 
 ### 3.2 Objetivos Específicos
 
-#### 3.2.1 Ajustar cuatro modelos de regresión lineal múltiple utilizando distintas combinaciones de variables predictoras y evaluar su desempeño estadístico.
+#### 3.2.1 Realizar un análisis exploratorio de datos (EDA) para conocer la distribución y relaciones entre las variables morfológicas.
 
-#### 3.2.2 Comparar los modelos con base en métricas como $R^2$ ajustado, $MSE$ y $AIC$, para determinar cuál ofrece la mejor capacidad predictiva.
+#### 3.2.2 Aplicar pruebas de hipótesis para identificar diferencias significativas entre grupos y apoyar la selección de variables.
 
-#### 3.2.3 Analizar la relevancia y significancia estadística de las variables seleccionadas en cada modelo, para entender su influencia en la predicción del tamaño de la cabeza.
+#### 3.2.3 Construir cuatro modelos de regresión lineal múltiple, utilizando distintas combinaciones de variables predictoras.
+
+#### 3.2.4 Verificar los supuestos estadísticos de cada modelo para asegurar la validez de los resultados.
+
+#### 3.2.5 Evaluar el desempeño de los modelos, utilizando métricas como R² ajustado, MSE y AIC, para seleccionar el modelo más adecuado.
 
 
-## Paso 4: Instalar Liberias
+## Pasos 4 y 5: Instalar y Cargar Librerias
 
-## Psso 5: Cargar Liberias
 ```{r}
 library(rlang)
 library(ggplot2)
@@ -90,6 +81,7 @@ library(patchwork)
 library(reshape2)
 ```
 ## Paso 6: Importación de Datos y Lectura del Conjunto de Datos
+
 ### Paso 6.1: Asignar la ruta de los datos
 ```{r}
 setwd("..")
@@ -98,7 +90,6 @@ file_path <- file.path(path, "data", "possum.csv")
 print(file_path)
 ```
 
-
 ### Paso 6.2: Importar los datos 
 ```{r}
 data <- read.csv(file_path)
@@ -106,6 +97,7 @@ data <- read.csv(file_path)
 
 
 ## Paso 7: Analizando los Datos
+
 ### Paso 7.1: Inspección Básica de Datos
 ```{r}
 print(dim(data))
@@ -124,7 +116,9 @@ summary(data)
 ```
 
 ## Paso 8: Gestión de Duplicados y Valores Faltantes
+
 ### Paso 8.1: Gestión de Duplicados
+
 #### Paso 8.1.1: Identificación de Duplicados y valores faltantes
 ```{r}
 duplicates <- duplicated(data)
@@ -148,14 +142,15 @@ head(data)
 ```
 
 ## Paso 10: Limpieza y Manipulación de Datos
-### Paso 10.1: minusculas
+
+### Paso 10.1: Minusculas
 
 ```{r}
 data$Pop <- tolower(data$Pop)
 ```
 
 
-## Paso 10.2: Identificar tipos de columnas
+### Paso 10.2: Identificar tipos de columnas
 
 ```{r}
 # Identificar tipos de columnas
@@ -188,15 +183,15 @@ print("Categóricas Nominales:")
 print(nominal_columns)
 ```
 
+## Paso 11: Resumen Estadístico
 
-## Paso 9: Resumen Estadístico
-### Paso 9.1: Resumen
+### Paso 11.1: Resumen
 ```{r}
 summary(data)
 ```
 
 
-### Paso 9.2: Tendencia Central
+### Paso 11.2: Tendencia Central
 ```{r}
 if (!require(moments)) install.packages("moments", dependencies = TRUE)
 library(moments)
@@ -227,9 +222,10 @@ print(result)
 ```
 
 
-## Paso 11: Análisis Univariado
-### Paso 11.1: Análisis Univeriado de Variables Categorías
-#### Paso 11.1.1: Análisis Univeriado de Variables Nominales
+## Paso 12: Análisis Univariado
+
+### Paso 12.1: Análisis Univariado de Variables Categorícas
+#### Paso 12.1.1: Análisis Univariado de Variables Nominales
 
 ```{r}
 library(ggplot2)
@@ -268,15 +264,15 @@ for (column in categorical_columns) {
 
 ```
 
-##### Descripción de las gráficas
+##### Descripción y análisis de las gráficas 1 y 2.
 
 Las gráficas 1 y 2, muestran las distribuciones de frecuencia de las variables 'pop' y 'sex'.
-Para el caso de las poblaciones en las que se encontraron los ejemplares capturados (Gráfica 1), se puede establecer que de los 101 especímenes que se están analizando, 43 (correspondientes al 442,57%) fueron encontradas en Victoria y 58 (correspondientes al 57,43%), en otras regiones de Australia, como Nuevas Gales del Sur o Queensland. 
+Para el caso de las poblaciones en las que se encontraron los ejemplares capturados (Gráfica 1), se puede establecer que de los 101 especímenes que se están analizando, 43 (correspondientes al 42,57%) fueron encontradas en Victoria y 58 (correspondientes al 57,43%), en otras regiones de Australia, como Nuevas Gales del Sur o Queensland. 
 Por otra parte, en lo referente a la variable 'sex'(gráfica 2) se encontró que 42/101 = 41,58% corresponden a hembras y el resto, 58,42%, son machos.
+En la Gráfica 1 (Frecuencia Pop), se observa que la mayoría de las zarigüeyas provienen del grupo "other" (58 individuos) en comparación con "vic" (43 individuos). En la Gráfica 2 (Frecuencia Sex), hay más machos (59) que hembras (42). Estas diferencias en las frecuencias pueden influir en el análisis de regresión, ya que la variable "pop" podría estar asociada a diferencias geográficas y "sex" a variaciones morfológicas.
 
-
-### Paso 11.2: Análisis Univeriado de Variables Númericas
-#### Paso 11.2.1: Análisis Univeriado de Variables Discretas
+### Paso 12.2: Análisis Univariado de Variables Númericas
+#### Paso 12.2.1: Análisis Univariado de Variables Discretas
 
 ```{r}
 library(ggplot2)
@@ -315,9 +311,11 @@ for (column in discrete_columns) {
 }
 
 ```
+##### Descripción y análisis de las gráficas 3 y 4.
 
+Las gráficas muestran la distribución de dos variables discretas en el conjunto de datos. En la Gráfica 3 (Frecuencia site), el sitio 2 es el más representado con 33 individuos, mientras que otros sitios tienen frecuencias menores y distribuciones más uniformes. Esto sugiere que el muestreo no es homogéneo entre las ubicaciones. En la Gráfica 4 (Frecuencia age), la mayoría de las zarigüeyas tienen entre 2 y 5 años, con un pico en la edad 3 (27 individuos), y hay muy pocos ejemplares en edades extremas. Esta distribución puede ser relevante para el análisis morfológico, ya que la edad influye en el desarrollo físico.
 
-#### Paso 11.2.2: Análisis Univeriado de Variables Continuas
+#### Paso 12.2.2: Análisis Univariado de Variables Continuas
 
 ```{r}
 library(ggplot2)
@@ -347,11 +345,16 @@ for (column in continuous_columns) {
 
 ```
 
+##### Descripción y análisis de las gráficas 5 a 13.
 
-## Paso 12: Análisis Bivariado
-### Paso 12.1: Análisis Bivariado de Variables Categorías
-#### Paso 12.1.1: Análisis Bivariado de Variables Nominales
-##### Paso 12.1.1.1: Box Plots
+Las gráficas muestran la distribución de variables continuas en el conjunto de datos. La mayoría presentan distribuciones aproximadamente normales con algunas asimetrías y posibles valores atípicos. Se observa que algunas variables, como hdlngth y skullw, tienen una distribución más concentrada alrededor de un valor central, mientras que otras, como footlgth o totlngth, muestran mayor dispersión y multimodalidad. La presencia de picos irregulares sugiere posibles diferencias entre subgrupos dentro de la muestra. Estos patrones deben considerarse en el análisis de regresión, ya que pueden indicar relaciones no lineales o la necesidad de transformar algunas variables para mejorar la interpretación del modelo.
+
+
+## Paso 13: Análisis Bivariado
+
+### Paso 13.1: Análisis Bivariado de Variables Categóricas
+#### Paso 13.1.1: Análisis Bivariado de Variables Nominales
+##### Paso 13.1.1.1: Box Plots
 
 ```{r}
 library(ggplot2)
@@ -383,7 +386,19 @@ for (column in categorical_columns) {
 
 ```
 
-##### Paso 12.1.1.1: Kernel Density plots 
+##### Descripción y análisis de los boxplots 15 y 16.
+
+Las gráficas muestran la distribución de la longitud de la cabeza (hdlngth) en función de dos variables categóricas: población (Pop) y sexo (sex).
+
+En la Gráfica 14, las medianas de hdlngth son similares entre los grupos other y vic, pero other presenta una mayor dispersión, con valores atípicos en ambos extremos.
+
+En la Gráfica 15, los machos (m) tienden a tener valores de hdlngth ligeramente mayores en comparación con las hembras (f), aunque con una variabilidad similar. También hay valores atípicos en ambos grupos.
+
+Este análisis sugiere que el tamaño de la cabeza puede estar influenciado por el sexo y la población, pero la diferencia no parece ser drástica. Se realizará pruebas estadísticas para confirmar la significancia de estas diferencias.
+
+
+
+##### Paso 13.1.1.1: Kernel Density plots 
 
 ```{r}
 library(ggplot2)
@@ -415,13 +430,21 @@ for (column in categorical_columns) {
 
 ```
 
+##### Descripción y análisis de las gráficas 16 y 17.
+
+Las gráficas de densidad muestran la distribución suavizada de la longitud de la cabeza (hdlngth) según la población (Pop) y el sexo (sex).
+
+Gráfica 16: La población vic tiene una distribución más concentrada alrededor de los 94 mm, mientras que other presenta una mayor dispersión con una cola extendida hacia valores superiores.
+
+Gráfica 17: Las hembras (f) muestran una mayor densidad en valores cercanos a los 92 mm, mientras que los machos (m) tienen una distribución más extendida con una mayor presencia en valores más altos de hdlngth.
+
+En ambas comparaciones, las diferencias no son drásticas, pero sugieren que ciertos grupos pueden tener una tendencia a presentar tamaños de cabeza ligeramente mayores o menores. Un análisis estadístico adicional podría confirmar la significancia de estas diferencias.
 
 
 
-
-### Paso 12.2: Análisis Bivariado de Variables Númericas
-#### Paso 12.2.1: Análisis Univeriado de Variables Discretas
-##### Paso 12.2.1.1: Box Plots
+### Paso 13.2: Análisis Bivariado de Variables Númericas
+#### Paso 13.2.1: Análisis Bivariado de Variables Discretas
+##### Paso 13.2.1.1: Box Plots
 
 ```{r}
 library(ggplot2)
@@ -454,16 +477,25 @@ for (column in discrete_columns) {
 
 ```
 
+##### Descripción y análisis de los boxplots 18 y 19.
+
+Las gráficas de cajas muestran la variabilidad de la longitud de la cabeza (hdlngth) según el sitio de captura (site) y la edad (age).
+
+Gráfica 18: Hay diferencias en la distribución de hdlngth entre sitios. Algunos sitios (como el 3 y el 6) presentan medianas más altas y mayor dispersión, mientras que otros (como el 2 y el 5) tienen distribuciones más compactas. También se observan valores atípicos en varios sitios.
+
+Gráfica 19: La longitud de la cabeza tiende a aumentar con la edad, aunque hay bastante variabilidad dentro de cada grupo etario. Las edades más avanzadas presentan menos datos, pero muestran una tendencia a valores más altos de hdlngth.
+
+Estas visualizaciones sugieren que tanto la ubicación geográfica como la edad pueden influir en el tamaño de la cabeza de las zarigüeyas, pero se requiere un análisis estadístico para confirmar estas diferencias.
 
 
-##### Paso 12.2.1.1: Kernel Density plots
+##### Paso 13.2.1.1: Kernel Density plots
 
 ```{r}
 library(ggplot2)
 library(viridis)
 
-# Continuación de la numeración (suponiendo que la última gráfica fue la 18)
-graph_number <- 19  
+# Continuación de la numeración (suponiendo que la última gráfica fue la 19)
+graph_number <- 20  
 
 for (column in discrete_columns) {
   p <- ggplot(data = data, aes(x = !!sym(target_column), fill = factor(!!sym(column)))) + 
@@ -488,18 +520,22 @@ for (column in discrete_columns) {
 
 ```
 
+##### Descripción y análisis de las gráficas 20 y 21.
 
+Estas gráficas de densidad muestran la distribución de la longitud de la cabeza (hdlngth) en función del sitio (site) y la edad (age).
 
+Gráfica 20: Se observan diferencias en la distribución de hdlngth entre los distintos sitios. Algunos sitios presentan distribuciones más anchas y bimodales, mientras que otros tienen picos más marcados, lo que indica variabilidad en el tamaño de la cabeza entre las poblaciones de diferentes regiones.
 
+Gráfica 21: La distribución de hdlngth por edad muestra un problema evidente: hay un pico extremadamente alto en una edad específica (probablemente por pocos datos en esa categoría). Esto sugiere que algunas edades tienen menos observaciones, lo que distorsiona la visualización de la densidad.
 
-#### Paso 12.2.2: Análisis Univariado de Variables Continuas
+#### Paso 13.2.2: Análisis Bivariado de Variables Continuas
 
 ```{r}
 library(ggplot2)
 library(viridis)
 
-# Continuación de la numeración (suponiendo que la última gráfica fue la 19)
-graph_number <- 20  
+# Continuación de la numeración (suponiendo que la última gráfica fue la 21)
+graph_number <- 22  
 
 for (column in continuous_columns) {
   if (column != target_column) {
@@ -528,8 +564,21 @@ for (column in continuous_columns) {
 
 ```
 
+##### Descripción y análisis de las gráficas 22 a 29.
 
-## Paso 13: Análisis multivariado
+Estas gráficas muestran relaciones entre la longitud de la cabeza (hdlngth) y otras variables continuas, con una línea de regresión ajustada.
+
+Observaciones generales:
+
+Parece haber una relación positiva entre hdlngth y variables como totlngth, footlgth, chest y belly, lo que sugiere que animales más grandes tienden a tener cabezas más largas.
+
+En el caso de earconch y eye, la relación parece ser más débil o dispersa.
+
+Algunas gráficas muestran bastante dispersión, lo que indica una posible variabilidad en la correlación entre estas variables.
+
+Si alguna de estas variables tiene alta correlación con hdlngth, podrían ser buenos predictores en el modelo de regresión.
+
+## Paso 14: Análisis multivariado
 
 ```{r}
 correlation_matrix <- cor(data[, names(numeric_columns)], use = "pairwise.complete.obs")
@@ -581,6 +630,39 @@ ggcorrplot(
 )
 
 ```
+##### Análisis matriz de correlaciones.
+
+La matriz de correlaciones confirma varias relaciones clave con hdlngth que pueden ser útiles para el modelo de regresión:
+
+Variables más correlacionadas con hdlngth:
+
+skullw (0.71)
+
+chest (0.62)
+
+belly (0.55)
+
+totlngth (0.56)
+
+Estas variables podrían ser buenos predictores en el modelo.
+
+Variables con correlación baja o nula con hdlngth:
+
+eye (0.25)
+
+site (-0.20)
+
+earconch (0.13)
+
+Dado que la correlación es débil, estas variables podrían no aportar mucho al modelo.
+
+Colinealidad potencial:
+
+footlgth y earconch tienen una correlación negativa fuerte (-0.82).
+
+footlgth y chest tienen una correlación alta (0.49).
+
+belly y chest están altamente correlacionados (0.61).
 
 # Código para graficar sólo correlaciones altas
 
@@ -605,6 +687,25 @@ ggcorrplot(
 )
 
 ```
+##### Análisis matrices de correlación.
+
+Análisis de Correlaciones Altas
+El análisis de correlaciones en el conjunto de datos ha permitido identificar relaciones significativas entre las variables, lo que resulta clave para la selección de predictores en el modelo de regresión múltiple. A partir de la matriz de correlaciones generales y la visualización de correlaciones altas, se destacan los siguientes hallazgos:
+
+1. Relaciones Fuertes Identificadas
+Existe una correlación negativa fuerte entre footlgth y earconch (-0.82), lo que sugiere que estas dos variables capturan información similar pero en direcciones opuestas.
+
+Se observa una correlación negativa considerable entre footlgth y site (-0.78), lo que indica que la longitud del pie podría estar influenciada significativamente por la ubicación geográfica de las zarigüeyas.
+
+Hdlngth y skullw presentan una correlación positiva fuerte (0.71), lo que refleja la relación anatómica entre el largo de la cabeza y el ancho del cráneo.
+
+2. Implicaciones para la Modelización
+La alta correlación entre footlgth y earconch sugiere que incluir ambas variables en un mismo modelo podría generar redundancia y problemas de multicolinealidad. Se recomienda seleccionar una de ellas o realizar una combinación de variables para mitigar estos efectos.
+
+La relación entre footlgth y site podría indicar que la longitud del pie varía según la región geográfica. Es fundamental evaluar si site debe ser tratada como una variable categórica o si es conveniente excluirla para evitar colinealidad con footlgth.
+
+La fuerte relación entre hdlngth y skullw sugiere que ambas variables contienen información sobre el tamaño cefálico. Si bien esto es esperado, se debe considerar si una de ellas es redundante dentro del modelo de predicción.
+
 
 # Tabla de correlaciones menores a -0.7 y mayores a 0.7, ordenadas de mayor a menor
 
