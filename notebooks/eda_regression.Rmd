@@ -17,18 +17,59 @@ Es fundamental que el proyecto considere, como mínimo, los siguientes tópicos:
 - Validación de supuestos
 - Análisis diagnóstico
 
-## Paso 1: Contexto
+## Paso 1: Contexto y descripción de variables
+
+El presente trabajo, para la asignatura Modelos Avanzados de Machine Learning, se desarrolló con base en el conjunto de datos “possum.csv” que proviene originalmente del paquete DAAG R, que contiene conjuntos de datos utilizados en ejemplos y ejercicios para práctica clásica de regresión, en el libro Maindonald, J.H. y Braun, W.J. (2003, 2007, 2010) "Data Analysis and Graphics Using R", y también se ha usado en el capítulo 8 del libro “OpenIntro Statistics”: Introduction to linear regression.
+El conjunto de datos “possum.csv”, consta de nueve mediciones morfométricas realizadas en cada una de las 104 zarigüeyas de cola de cepillo de montaña, atrapadas en siete sitios desde el sur de Victoria hasta el centro de Queensland (Australia). Las variables involucradas en el dataframe son:
+
+case: caso, número de observación.
+
+site: el número del sitio donde fue atrapada la zarigüeya.
+
+pop: población, ya sea de Victoria u otra (Nueva Gales del Sur o Queensland).
+
+sex: m (macho) o f (hembra).
+
+age: edad.
+
+hdlngth: longitud de la cabeza (mm).
+
+skullw: ancho del cráneo (mm).
+
+totlngth: longitud total (cm).
+
+taill: longitud de la cola (cm).
+
+footlgth: longitud de las patas.
+
+earconch: longitud de la concha auricular.
+
+eye: distancia del canto medial al canto lateral del ojo derecho.
+
+chest: perímetro torácico (cm).
+
+belly: perímetro abdominal (cm).
+
+
 
 ## Paso 2: Problema
 
-
-- Can we use total length to predict a possum's head length?
-- Which possum body dimensions are most correlated with age and sex?
-- Can we classify a possum's sex by its body dimensions and location?
-- Can we predict a possum's trapping location from its body dimensions?
-
+El objetivo de este trabajo desarrollar 4 modelos de regresión lineal múltiple, usando diferentes conjuntos de variables del dataframe y encontrar el más adecuado para predecir el tamaño de la cabeza de una zarigüeya.
 
 ## Paso 3: Objetivos
+
+### 3.1 Objetivo General
+
+Desarrollar y comparar cuatro modelos de regresión lineal múltiple (RLM) para predecir la longitud de la cabeza de una zarigüeya, a partir de variables morfológicas, con el fin de identificar el modelo con mejor capacidad predictiva.
+
+### 3.2 Objetivos Específicos
+
+#### 3.2.1 Ajustar cuatro modelos de regresión lineal múltiple utilizando distintas combinaciones de variables predictoras y evaluar su desempeño estadístico.
+
+#### 3.2.2 Comparar los modelos con base en métricas como $R^2$ ajustado, $MSE$ y $AIC$, para determinar cuál ofrece la mejor capacidad predictiva.
+
+#### 3.2.3 Analizar la relevancia y significancia estadística de las variables seleccionadas en cada modelo, para entender su influencia en la predicción del tamaño de la cabeza.
+
 
 ## Paso 4: Instalar Liberias
 
@@ -84,11 +125,21 @@ summary(data)
 
 ## Paso 8: Gestión de Duplicados y Valores Faltantes
 ### Paso 8.1: Gestión de Duplicados
-#### Paso 8.1.1: Identificación de Duplicados
+#### Paso 8.1.1: Identificación de Duplicados y valores faltantes
 ```{r}
 duplicates <- duplicated(data)
+colSums(is.na(data)) # Agregué para identificar valores faltantes...
+data <- na.omit(data) # eliminar filas con valores faltantes...
 sum(duplicates)
 ```
+
+```{r}
+colSums(is.na(data)) # Agregué para identificar valores faltantes...
+```
+```{r}
+print(dim(data))
+```
+
 
 ## Paso 9: Reducción de Datos
 ```{r}
@@ -181,33 +232,119 @@ print(result)
 #### Paso 11.1.1: Análisis Univeriado de Variables Nominales
 
 ```{r}
+library(ggplot2)
+
+# Definir colores personalizados solo para "pop" y "sex"
+color_map <- list(
+  pop = c("blue", "red"),
+  sex = c("purple", "orange")
+)
+
+# Contador para numerar las gráficas
+graph_number <- 1  
+
 for (column in categorical_columns) {
-  p <- ggplot(data = data, aes(x = !!sym(column))) +
-    geom_bar()
-  print(p)
+  p <- ggplot(data = data, aes(x = !!sym(column), fill = !!sym(column))) +
+    geom_bar(width = 0.4) +  # Hace las barras más angostas
+    geom_text(stat = "count", aes(label = ..count..), vjust = -0.2, size = 5) +  # Ajusta las etiquetas sobre las barras
+    
+    labs(
+      title = paste("Grafica", graph_number, "- Frecuencia", column),  # Agrega numeración
+      x = column,
+      y = "Frecuencia"
+    ) +
+    
+    # Ajustar colores si están en color_map, si no, usa la escala automática
+    (if (column %in% names(color_map)) scale_fill_manual(values = color_map[[column]]) else scale_fill_discrete()) +
+    
+    expand_limits(y = max(table(data[[column]])) * 1.1) +  # Aumenta el espacio en el eje Y
+    theme_minimal() +
+    theme(plot.title = element_text(hjust = 0.5))  # Centra el título
+  
+  print(p)  # Muestra la gráfica
+  
+  graph_number <- graph_number + 1  # Incrementa el contador
 }
+
 ```
+
+##### Descripción de las gráficas
+
+Las gráficas 1 y 2, muestran las distribuciones de frecuencia de las variables 'pop' y 'sex'.
+Para el caso de las poblaciones en las que se encontraron los ejemplares capturados (Gráfica 1), se puede establecer que de los 101 especímenes que se están analizando, 43 (correspondientes al 442,57%) fueron encontradas en Victoria y 58 (correspondientes al 57,43%), en otras regiones de Australia, como Nuevas Gales del Sur o Queensland. 
+Por otra parte, en lo referente a la variable 'sex'(gráfica 2) se encontró que 42/101 = 41,58% corresponden a hembras y el resto, 58,42%, son machos.
+
 
 ### Paso 11.2: Análisis Univeriado de Variables Númericas
 #### Paso 11.2.1: Análisis Univeriado de Variables Discretas
 
 ```{r}
+library(ggplot2)
+library(viridis)  # Para generar colores distintos automáticamente
+
+# Continuación de la numeración (ya íbamos en la 2)
+graph_number <- 3  
+
 for (column in discrete_columns) {
-  p <- ggplot(data = data, aes(x = !!sym(column))) +
-    geom_bar()
-  print(p)
+  p <- ggplot(data = data, aes(x = !!sym(column), fill = as.factor(!!sym(column)))) +  # Asigna colores distintos a cada categoría
+    geom_bar(width = 0.4) +  # Hace las barras más delgadas
+    geom_text(stat = "count", aes(label = ..count..), vjust = -0.2, size = 5) +  # Agrega etiquetas arriba de las barras
+    
+    labs(
+      title = paste("Gráfica", graph_number, "- Frecuencia", column),  # Continúa la numeración
+      x = column,
+      y = "Frecuencia"
+    ) +
+    
+    scale_fill_viridis_d(option = "plasma") +  # Asigna colores distintos a cada barra
+    theme_minimal() +
+    theme(plot.title = element_text(hjust = 0.5))  # Centra el título
+
+  # Si la variable es 'age' (numérica), asegúrate de que no tenga decimales en el eje X
+  if (column == "age") {
+    p <- p + scale_x_continuous(breaks = seq(min(data[[column]], na.rm = TRUE), max(data[[column]], na.rm = TRUE), by = 1))
+  }
+  
+  # Si la variable es 'site' (categórica), usa escala discreta normal
+  if (column == "site") {
+    p <- p + scale_x_discrete()
+  }
+
+  print(p)  # Muestra la gráfica
+  graph_number <- graph_number + 1  # Incrementa el contador para la siguiente gráfica
 }
+
 ```
 
 
 #### Paso 11.2.2: Análisis Univeriado de Variables Continuas
 
 ```{r}
+library(ggplot2)
+library(viridis)  # Para colores bonitos
+
+# Continuación de la numeración (suponiendo que la última gráfica fue la 4)
+graph_number <- 5  
+
 for (column in continuous_columns) {
-  p <- ggplot(data = data, aes(x = !!sym(column))) + 
-    geom_histogram()
-  print(p)
+  p <- ggplot(data = data, aes(x = !!sym(column), fill = ..count..)) + 
+    geom_histogram(bins = 30, color = "black", fill = "blue", alpha = 0.7) +  # Histogramas con bordes y color semi-transparente
+    geom_text(stat = "bin", aes(label = ..count..), vjust = -0.5, bins = 30, size = 4) +  # Frecuencia sobre cada barra
+    
+    labs(
+      title = paste("Gráfica", graph_number, "- Distribución de", column),  # Agrega numeración
+      x = column,
+      y = "Frecuencia"
+    ) +
+    
+    scale_fill_viridis_c(option = "plasma") +  # Asigna colores con gradiente
+    theme_minimal() +
+    theme(plot.title = element_text(hjust = 0.5))  # Centra el título
+
+  print(p)  # Muestra la gráfica
+  graph_number <- graph_number + 1  # Incrementa el contador
 }
+
 ```
 
 
@@ -217,22 +354,69 @@ for (column in continuous_columns) {
 ##### Paso 12.1.1.1: Box Plots
 
 ```{r}
+library(ggplot2)
+library(viridis)  # Para colores más atractivos
+
+# Continuación de la numeración (suponiendo que la última gráfica fue la 13)
+graph_number <- 14  
+
 for (column in categorical_columns) {
-  p <- ggplot(data = data, aes(x = !!sym(column), y = !!sym(target_column))) + 
-    geom_boxplot()
-  print(p)
+  p <- ggplot(data = data, aes(x = !!sym(column), y = !!sym(target_column), fill = !!sym(column))) + 
+    geom_boxplot(outlier.color = "red", outlier.shape = 16, outlier.size = 3, notch = FALSE) +  # Boxplot con valores atípicos en rojo
+    scale_fill_viridis_d(option = "plasma", begin = 0.2, end = 0.8) +  # Colores atractivos para cada categoría
+    
+    labs(
+      title = paste("Gráfica", graph_number, "- Distribución de", target_column, "por", column),  # Agrega numeración
+      x = column,
+      y = target_column
+    ) +
+    
+    theme_minimal() +
+    theme(
+      plot.title = element_text(hjust = 0.5),  # Centra el título
+      axis.text.x = element_text(angle = 45, hjust = 1)  # Rota las etiquetas si son muchas categorías
+    )
+  
+  print(p)  # Muestra la gráfica
+  graph_number <- graph_number + 1  # Incrementa el contador
 }
+
 ```
 
 ##### Paso 12.1.1.1: Kernel Density plots 
 
 ```{r}
+library(ggplot2)
+library(viridis)  # Para colores más atractivos
+
+# Continuación de la numeración (suponiendo que la última gráfica fue la 15)
+graph_number <- 16  
+
 for (column in categorical_columns) {
   p <- ggplot(data = data, aes(x = !!sym(target_column), fill = !!sym(column))) + 
-    geom_density(alpha = 0.4)
-  print(p)
+    geom_density(alpha = 0.5) +  # Ajuste de transparencia para que las densidades sean visibles
+    scale_fill_viridis_d(option = "plasma", begin = 0.2, end = 0.8) +  # Mejora los colores
+    
+    labs(
+      title = paste("Gráfica", graph_number, "- Densidad de", target_column, "por", column),  
+      x = target_column,
+      y = "Densidad"
+    ) +
+    
+    theme_minimal() +
+    theme(
+      plot.title = element_text(hjust = 0.5),  # Centra el título
+      legend.position = "right"  # Coloca la leyenda en la parte derecha
+    )
+  
+  print(p)  # Muestra la gráfica
+  graph_number <- graph_number + 1  # Incrementa el contador
 }
+
 ```
+
+
+
 
 
 ### Paso 12.2: Análisis Bivariado de Variables Númericas
@@ -240,42 +424,112 @@ for (column in categorical_columns) {
 ##### Paso 12.2.1.1: Box Plots
 
 ```{r}
+library(ggplot2)
+library(viridis)  # Para colores más atractivos
+
+# Continuación de la numeración (suponiendo que la última gráfica fue la 17)
+graph_number <- 18  
+
 for (column in discrete_columns) {
-  p <- ggplot(data = data, aes(x = factor(!!sym(column)), y = !!sym(target_column))) + 
-    geom_boxplot() +
-    xlab(column) +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  p <- ggplot(data = data, aes(x = factor(!!sym(column)), y = !!sym(target_column), fill = factor(!!sym(column)))) + 
+    geom_boxplot(outlier.color = "red", outlier.shape = 16, outlier.size = 3, notch = FALSE) +  # Boxplot con valores atípicos en rojo
+    scale_fill_viridis_d(option = "plasma", begin = 0.2, end = 0.8) +  # Mejora los colores
+    
+    labs(
+      title = paste("Gráfica", graph_number, "- Distribución de", target_column, "por", column),  
+      x = column,
+      y = target_column
+    ) +
+    
+    theme_minimal() +
+    theme(
+      plot.title = element_text(hjust = 0.5),  # Centra el título
+      axis.text.x = element_text(angle = 45, hjust = 1),  # Rota las etiquetas para mejor lectura
+      legend.position = "none"  # Oculta la leyenda porque ya está en el eje X
+    )
   
-  print(p)
+  print(p)  # Muestra la gráfica
+  graph_number <- graph_number + 1  # Incrementa el contador
 }
+
 ```
+
 
 
 ##### Paso 12.2.1.1: Kernel Density plots
 
 ```{r}
+library(ggplot2)
+library(viridis)
+
+# Continuación de la numeración (suponiendo que la última gráfica fue la 18)
+graph_number <- 19  
+
 for (column in discrete_columns) {
   p <- ggplot(data = data, aes(x = !!sym(target_column), fill = factor(!!sym(column)))) + 
-    geom_density(alpha = 0.4)
-  print(p)
+    geom_density(alpha = 0.5) +  # Ajuste de transparencia para visualizar superposición
+    scale_fill_viridis_d(option = "plasma", begin = 0.2, end = 0.8) +  # Mejora los colores
+    
+    labs(
+      title = paste("Gráfica", graph_number, "- Densidad de", target_column, "por", column),  
+      x = target_column,
+      y = "Densidad"
+    ) +
+    
+    theme_minimal() +
+    theme(
+      plot.title = element_text(hjust = 0.5),  # Centra el título
+      legend.position = "right"  # Coloca la leyenda a la derecha
+    )
+  
+  print(p)  # Muestra la gráfica
+  graph_number <- graph_number + 1  # Incrementa el contador
 }
+
 ```
 
 
-#### Paso 12.2.2: Análisis Univeriado de Variables Continuas
+
+
+
+#### Paso 12.2.2: Análisis Univariado de Variables Continuas
 
 ```{r}
+library(ggplot2)
+library(viridis)
+
+# Continuación de la numeración (suponiendo que la última gráfica fue la 19)
+graph_number <- 20  
+
 for (column in continuous_columns) {
   if (column != target_column) {
-    p <- ggplot(data = data, aes(x = !!sym(column), y = !!sym(target_column))) + 
-      geom_point()
-    print(p)
+    p <- ggplot(data = data, aes(x = !!sym(column), y = !!sym(target_column), color = !!sym(column))) + 
+      geom_point(alpha = 0.6, size = 3) +  # Puntos con transparencia para evitar saturación
+      scale_color_viridis_c(option = "plasma") +  # Mejora la visualización del color
+      
+      geom_smooth(method = "lm", formula = y ~ x, color = "black", linetype = "dashed", se = TRUE) + # Línea tendencia
+      
+      labs(
+        title = paste("Gráfica", graph_number, "- Relación entre", target_column, "y", column),  
+        x = column,
+        y = target_column
+      ) +
+      
+      theme_minimal() +
+      theme(
+        plot.title = element_text(hjust = 0.5),  # Centra el título
+        legend.position = "none"  # Oculta la leyenda de colores
+      )
+    
+    print(p)  # Muestra la gráfica
+    graph_number <- graph_number + 1  # Incrementa el contador
   }
 }
+
 ```
 
 
-## Paso 13: Multivariate Analysis
+## Paso 13: Análisis multivariado
 
 ```{r}
 correlation_matrix <- cor(data[, names(numeric_columns)], use = "pairwise.complete.obs")
@@ -284,8 +538,95 @@ print(correlation_matrix)
 ```
 
 ```{r}
-corrplot(correlation_matrix, method = "color", tl.cex = 0.8)
+library(corrplot)
+
+# Gráfico mejorado de matriz de correlación
+corrplot(correlation_matrix,
+         method = "color",         # Colores para representar intensidad
+         type = "upper",           # Solo la mitad superior del triángulo
+         order = "hclust",         # Ordena variables por similitud (clustering jerárquico)
+         col = viridis::viridis(200),  # Paleta de colores viridis
+         addCoef.col = "black",    # Muestra los valores numéricos de la correlación
+         number.cex = 0.7,         # Tamaño de los números
+         tl.cex = 0.9,             # Tamaño de etiquetas (nombres de variables)
+         tl.col = "black",         # Color de texto de las etiquetas
+         tl.srt = 45,              # Rotación del texto
+         diag = FALSE,             # No mostrar la diagonal
+         mar = c(0, 0, 1, 0)       # Márgenes
+)
+
 ```
+
+## Otra versión con ggcorrplot
+
+```{r}
+library(ggcorrplot)
+
+# Matriz de correlación
+numeric_columns <- names(data)[sapply(data, is.numeric)]  # Asegura que sea un vector de nombres
+correlation_matrix <- cor(data[, numeric_columns, drop = FALSE], use = "pairwise.complete.obs")
+
+# Gráfico optimizado
+ggcorrplot(
+  corr = correlation_matrix,
+  method = "square",              # Forma de los cuadros
+  type = "upper",                 # Muestra solo triángulo superior
+  lab = TRUE,                     # Muestra los valores de correlación
+  lab_size = 3,                   # Tamaño de etiquetas numéricas
+  colors = viridis::viridis(3, option = "C", direction = -1),  # Paleta viridis invertida
+  outline.color = "white",       # Bordes de los cuadros
+  hc.order = TRUE,               # Ordena con clustering jerárquico
+  ggtheme = ggplot2::theme_minimal() + 
+    theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))  # Rotación y tema limpio
+)
+
+```
+
+# Código para graficar sólo correlaciones altas
+
+```{r}
+library(ggcorrplot)
+
+# Filtrar solo correlaciones fuertes (>0.7 o <-0.7)
+cor_filtered <- correlation_matrix
+cor_filtered[abs(correlation_matrix) < 0.7] <- NA  # Deja NA en correlaciones débiles
+
+# Graficar la matriz filtrada
+ggcorrplot(
+  cor_filtered,
+  method = "square",
+  type = "upper",
+  lab = TRUE,
+  lab_size = 3,
+  colors = viridis::viridis(3, option = "C", direction = -1),
+  outline.color = "white",
+    ggtheme = ggplot2::theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
+)
+
+```
+
+# Tabla de correlaciones menores a -0.7 y mayores a 0.7, ordenadas de mayor a menor
+
+```{r}
+# Convertir la matriz de correlación en un data frame largo
+cor_df <- as.data.frame(as.table(correlation_matrix))
+
+# Filtrar correlaciones fuertes (y que no sean la diagonal: var vs sí misma)
+cor_high <- cor_df %>%
+  filter(Var1 != Var2 & abs(Freq) > 0.7) %>%
+  arrange(desc(abs(Freq)))
+
+# Imprimir la tabla
+print(cor_high)
+
+```
+
+##### Análisis de las matrices y la tabla de correlaciones más significativas.
+
+Los resultados de la tabla muestran relaciones fuertes entre algunas características físicas de las zarigüeyas. Por ejemplo, existe una correlación negativa alta entre la variable "site" (el lugar donde fueron capturadas las zarigüeyas) y "earconch" (longitud de la concha auricular), lo cual indica que la longitud de la oreja varía notablemente según el sitio, disminuyendo en algunos lugares y aumentando en otros. Asimismo, la longitud de la pata ("footlgth") está positivamente relacionada con la longitud de la oreja, lo que sugiere que zarigüeyas con patas más largas también tienden a tener orejas más largas. Por otro lado, "footlgth" también se relaciona negativamente con "site", reforzando la idea de diferencias morfológicas según la ubicación geográfica. Finalmente, se observa una fuerte relación positiva entre el ancho del cráneo ("skullw") y la longitud de la cabeza ("hdlngth"), lo cual es coherente, ya que ambas son medidas del tamaño del cráneo. Estas correlaciones ayudan a identificar qué variables están más conectadas entre sí y son útiles para predecir el tamaño de la cabeza.
+
+
 
 
 ```{r}
@@ -317,26 +658,27 @@ for (i in 1:(length(categorical_columns)-1)) {
 ```
 
 ```{r}
-# Example: Assume numeric_columns contains the names of numeric variables
-numeric_data <- data[names(numeric_columns)]
+# Asegúrate de que numeric_columns contiene nombres de columnas numéricas
+numeric_data <- data[, numeric_columns]
 
-# Compute p-values using nested sapply() with proper indexing
+# Calcular matriz de p-valores para correlaciones
 cor_pvalues <- sapply(seq_along(numeric_columns), function(i) {
   sapply(seq_along(numeric_columns), function(j) {
     if (i != j) {
-      cor.test(numeric_data[[i]], numeric_data[[j]])$p.value
+      cor.test(numeric_data[[i]], numeric_data[[j]], use = "pairwise.complete.obs")$p.value
     } else {
-      NA
+      NA  # o 0 si prefieres
     }
   })
 })
 
-# Convert to matrix and set row/column names
+# Convertir en matriz y agregar nombres
 cor_pvalues <- as.matrix(cor_pvalues)
-rownames(cor_pvalues) <- colnames(cor_pvalues) <- names(numeric_columns)
+rownames(cor_pvalues) <- colnames(cor_pvalues) <- numeric_columns
 
-# Print the matrix of p-values
+# Imprimir matriz de p-valores
 print(cor_pvalues)
+
 ```
 ```{r}
 
