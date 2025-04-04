@@ -287,6 +287,9 @@ print(correlation_matrix)
 corrplot(correlation_matrix, method = "color", tl.cex = 0.8)
 ```
 
+Se realiza la comparación de correlación entre la variable objetivo hdlngth (largo de cabeza), en la cual la correlación más alta es con totlnghth (total de largo de la zariguella) con 0.69, pero no es factor para exlcuir esta variable por multicolinealidad. 
+
+
 
 ```{r}
 library(dplyr)
@@ -303,18 +306,8 @@ print(chi_square_results)
 
 ```
 
+De la prueba Chi cuadrado, se obtiene un valor de 3.66 x e-20, el valor es muy pequeño, lo cual significa que tiene una relacion significativa entre population (población) y sex (sexo). 
 
-```{r}
-
-
-for (i in 1:(length(categorical_columns)-1)) {
-  for (j in (i+1):length(categorical_columns)) {
-    formula <- as.formula(paste("~", categorical_columns[i], "+", categorical_columns[j]))
-    mosaic(formula, data = data, shade = TRUE, legend = TRUE)
-  }
-}
-
-```
 
 ```{r}
 # Example: Assume numeric_columns contains the names of numeric variables
@@ -338,6 +331,8 @@ rownames(cor_pvalues) <- colnames(cor_pvalues) <- names(numeric_columns)
 # Print the matrix of p-values
 print(cor_pvalues)
 ```
+De acuerdo con la matriz de P-values se observa que son menores a 0.05 por lo que significa que todos tienen alta relación significativa, con el resto de variables independientes. 
+
 ```{r}
 
 # Melt the matrix into long format
@@ -371,10 +366,14 @@ ggplot(pvalue_melted, aes(x = Var1, y = Var2, fill = significant)) +
   )
 ```
 
+De la matriz de significancia a través de los * se observa que en las variables que hay mayor significancia por el numero de *, son belly (abdomen), chest(pecho), eye(distancia del ojo con la sien), footlgth (longitud de pie), tail (tamaño de cola), totlngth (total de tamaño), y skullw (ancho del craneo).
+
+
 ```{r}
+
 # Extract numeric variables (excluding 'hdlngth' to avoid self-correlation)
 numeric_vars <- names(data)[sapply(data, is.numeric)]
-numeric_vars <- numeric_vars[numeric_vars != "hdlngth"]  # Remove target
+numeric_vars <- setdiff(numeric_vars, c("hdlngth", "site"))  # Remove target
 
 # Compute correlations and p-values between 'hdlngth' and all other numeric vars
 results <- sapply(numeric_vars, function(var) {
@@ -391,7 +390,7 @@ results_df$variable <- rownames(results_df)
 ```{r}
 # Step 1: Compute correlations with hdlngth
 numeric_vars <- names(data)[sapply(data, is.numeric)]
-numeric_vars <- numeric_vars[numeric_vars != "hdlngth"]  # Exclude target
+numeric_vars <- numeric_vars[numeric_vars, c("hdlngth", "site")]  # Exclude target
 
 results <- lapply(numeric_vars, function(var) {
   test <- cor.test(data$hdlngth, data[[var]])
@@ -423,8 +422,14 @@ ggplot(numeric_results_df, aes(x = reorder(variable, cor), y = cor,
   theme(plot.title = element_text(hjust = 0.5))
 ```
 
+Este grafico de barras, retrata la correlación de las variables continuas en relación a la variable ojetivo de tamaño de cabeza, lo cual deja con un nivel de significancia bajo al tamaño de las orejas (earconch)
+
 
 ```{r}
+
+
+
+
 # Step 0: Verify hdlngth exists
 if(!"hdlngth" %in% names(data)) {
   stop("Error: 'hdlngth' column not found in the dataset")
@@ -514,6 +519,8 @@ ggplot(results_df, aes(x = reorder(variable, abs(effect_size)),
   theme_minimal(base_size = 14)
 ```
 
+Por otra parte el nivel de significancia de las variables categoricas seleccionadas, en este caso sexo y lugar de habitat, se puede observar que sexo manifiesta un nivel de significancia alto
+
 ## Paso 14: Pruebas de hipótesis
 
 
@@ -530,24 +537,28 @@ https://rpubs.com/acastro/regresion_lineal_supuestos
 3. Varianza constante (Homocedasticidad)
 4. Independencia
 
-
+Para el modelo 1 se utilizaran todas las variables independientes
 
 ```{r}
 linear_model1 <- lm(hdlngth ~ ., data = data)
 summary(linear_model1)
 ```
 
+Para el modelo 2 se eliminan las variables earconch y sexm
+
 
 ```{r}
 linear_model2 <- lm(hdlngth ~ age + skullw + totlngth + taill + footlgth + eye + chest + belly + Pop, data = data)
 summary(linear_model2)
 ```
-
+Para el modelo 3 se selecciona las variables skullw, totlngth, taill, footlgth y Pop ya que los resultados del modelo muestra que tienen mayor signidicancia
 
 ```{r}
 linear_model3 <- lm(hdlngth ~ skullw + totlngth + taill + footlgth + Pop, data = data)
 summary(linear_model3)
 ```
+Y para el ultimo modelo, tomando las variables restantes del modelo linear 3, solo se utilizan skullw y totlngth
+
 ```{r}
 linear_model4 <- lm(hdlngth ~ skullw + totlngth, data = data)
 summary(linear_model4)
@@ -578,7 +589,7 @@ ggplot(residual_data, aes(x = Fitted, y = Residuals, color = Model)) +
   theme_minimal() +
   theme(legend.position = "none")
 ```
-
+Se puede observar que los cuatro modelos a simple vista no marcan una linea de tendencia entre los valores residuales y los valores ajustados
 
 #### Paso 15.2.3: Prueba de Normalidad
 
@@ -614,6 +625,8 @@ print(normality_summary)
 }
 ```
 
+Dado que los valores P obtenidos en la prueba estadistica Kolmogoroc-Smirnov se observa que son mayores a 0.05 por lo cual cumplen el supuesto de normalidad
+
 ```{r}
 # Create list of plots
 plot_list <- lapply(1:4, function(i) {
@@ -631,7 +644,7 @@ plot_list <- lapply(1:4, function(i) {
 (plot_list[[1]] | plot_list[[2]]) / 
 (plot_list[[3]] | plot_list[[4]])
 ```
-
+De acuerdo a las graficas Q-Q se puede observar que en el modelo 1 es el que mas se aproxima a la linea de tendencia, lo que indica que los residuos puede tener una aproximación normal en comparación a los otros 3 modelos
 ```{r}
 library(car)
 
@@ -653,7 +666,7 @@ for (i in 1:4) {
 par(mfrow = c(1, 1))
 ```
 
-
+En este gráfico se puede denotar el smooth que indica la linea de separación de los residuos en las colas, lo cual visualmente el modelo 1 sigue obteniendo el mejor rendimiento
 
 #### Paso 15.2.4: Prueba de Varianza Constante
 ##### Paso 15.2.4.1: Goldfeld-Quandt Test
@@ -672,6 +685,7 @@ for (i in 1:4) {
 }
 ```
 
+Se puede observar que de acuerdo a los valores P de cada modelo en la prueba Golfeld-Quandt son menores que 0.05, por lo que indica que en los cuatro modelos hay heterocedasticidad. 
 
 ```{r}
 plot_list <- lapply(1:4, function(i) {
@@ -692,6 +706,8 @@ plot_list <- lapply(1:4, function(i) {
 (plot_list[[3]] | plot_list[[4]])
 ```
 
+De acuerdo a la prueba anterior se puede observar que ningun modelo cumple el supuesto de Homocedasticidad por lo que se visualiza las varianzas dispersas y no siguen una linea de tendencia en ningun modelo
+
 ##### Paso 15.2.4.2: Breusch-Pagan Test
 
 ```{r}
@@ -703,6 +719,8 @@ for (i in 1:4) {
   print(bp_test)
 }
 ```
+Ahora se procede a realizar la prueba Breusch-Pagan en la cual tambien se busca determinar si hay Homocedasticidad o no. Lo cual se puede observar que solo el modelo numero 4 no cumple con esta condición ya que el valor es menor a 0.05.
+
 
 ```{r}
 plot_list <- lapply(1:4, function(i) {
@@ -725,7 +743,7 @@ plot_list <- lapply(1:4, function(i) {
 (plot_list[[1]] | plot_list[[2]]) / 
 (plot_list[[3]] | plot_list[[4]])
 ```
-
+De acuerdo con la gráfica de residuos el modelo numero 1 concentra mayor numero de residuos, lo que indica que no hay mayor variación  en el las varianzas del modelo, en comparación al modelo 2 y 3 que también cumplen la característica de Homocedasticidad, en cambio en el modelo 4 se observa mayor ruido en los residuos.
 
 
 ### Paso 15.2.5: Prueba de Independencia
@@ -743,6 +761,7 @@ for (i in 1:4) {
   print(dw_results[[i]])
 }
 ```
+Se realiza la prueba Durbin-Watson para determinar si hay correlación entre los residuos de las variables, lo cual demuestra una poca o casi nula correlación ya que el valor D-W de cada modelo es myor que 2 pero es muy cercano al valor.
 
 ```{r}
 plot_list <- lapply(1:4, function(i) {
@@ -763,7 +782,7 @@ plot_list <- lapply(1:4, function(i) {
 (plot_list[[1]] | plot_list[[2]]) / 
 (plot_list[[3]] | plot_list[[4]])
 ```
-
+De acuerdo con la grafica de residuos el mejor modelo que presenta menor ruido y presenta poca heterocedasticidad es el numero 1, ya que visual y dado por el valor obtenido 2.04 es el que mejor se ajusta al comportamiento de los residuos.
 
 
 ### Paso 15.3: Evaluación
@@ -775,4 +794,34 @@ plot_list <- lapply(1:4, function(i) {
 6. BIC
 
 
+```{r}
+# Función para calcular las métricas
+calcular_metricas <- function(modelo, nombre) {
+  y_true <- modelo$model[[1]]  # Valores reales de la variable dependiente
+  y_pred <- predict(modelo)    # Predicciones
+  
+  mse <- mean((y_true - y_pred)^2)  # MSE
+  mad <- mean(abs(y_true - y_pred)) # MAD
+  mape <- mean(abs((y_true - y_pred) / y_true)) * 100  # MAPE
+  r2 <- summary(modelo)$r.squared  # R²
+  aic <- AIC(modelo)  # AIC
+  bic <- BIC(modelo)  # BIC
+  
+  # Devolver un dataframe con los resultados
+  return(data.frame(Modelo = nombre, MSE = mse, MAD = mad, MAPE = mape, R2 = r2, AIC = aic, BIC = bic))
+}
+
+# Calcular métricas para los cuatro modelos
+resultados <- rbind(
+  calcular_metricas(linear_model1, "Modelo 1"),
+  calcular_metricas(linear_model2, "Modelo 2"),
+  calcular_metricas(linear_model3, "Modelo 3"),
+  calcular_metricas(linear_model4, "Modelo 4")
+)
+
+# Mostrar los resultados en una tabla
+print(resultados)
+```
+
+Como verificación final se observa que el modelo que presenta mejores metricas es el numero 1 que obtiene el error MSE, MAD, MAPE mas bajo y obtiene un R2 mas alto, lo que quiere decir que el modelo tiene una explicación del 73.20%, en valor akaike es el menor, aunque el BIC en el modelo 3 lleva ventaja, por numero total de rendimiento en las metricas, el mejor es el modelo 1.
 
