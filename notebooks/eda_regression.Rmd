@@ -830,7 +830,7 @@ results_df$variable <- rownames(results_df)
 ```{r}
 # Step 1: Compute correlations with hdlngth
 numeric_vars <- names(data)[sapply(data, is.numeric)]
-numeric_vars <- numeric_vars[numeric_vars, c("hdlngth", "site")]  # Exclude target
+numeric_vars <- setdiff(numeric_vars, c("hdlngth", "site"))  # Exclude target
 
 results <- lapply(numeric_vars, function(var) {
   test <- cor.test(data$hdlngth, data[[var]])
@@ -1226,13 +1226,6 @@ De acuerdo con la grafica de residuos el mejor modelo que presenta menor ruido y
 
 
 ### Paso 15.3: Evaluación
-1. MSE
-2. MAD
-3. MAPE
-4. R2
-5. AIC
-6. BIC
-
 
 ```{r}
 # Función para calcular las métricas
