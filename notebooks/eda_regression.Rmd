@@ -727,8 +727,9 @@ print(cor_high)
 
 Los resultados de la tabla muestran relaciones fuertes entre algunas características físicas de las zarigüeyas. Por ejemplo, existe una correlación negativa alta entre la variable "site" (el lugar donde fueron capturadas las zarigüeyas) y "earconch" (longitud de la concha auricular), lo cual indica que la longitud de la oreja varía notablemente según el sitio, disminuyendo en algunos lugares y aumentando en otros. Asimismo, la longitud de la pata ("footlgth") está positivamente relacionada con la longitud de la oreja, lo que sugiere que zarigüeyas con patas más largas también tienden a tener orejas más largas. Por otro lado, "footlgth" también se relaciona negativamente con "site", reforzando la idea de diferencias morfológicas según la ubicación geográfica. Finalmente, se observa una fuerte relación positiva entre el ancho del cráneo ("skullw") y la longitud de la cabeza ("hdlngth"), lo cual es coherente, ya que ambas son medidas del tamaño del cráneo. Estas correlaciones ayudan a identificar qué variables están más conectadas entre sí y son útiles para predecir el tamaño de la cabeza.
 
+## 15. Análisis de hipótesis
 
-
+### 15.1 Análisis bivariado entre la variable sex y pop
 
 ```{r}
 library(dplyr)
@@ -742,11 +743,16 @@ chi_square_results <- expand.grid(categorical_columns, categorical_columns) %>%
   }, Var1, Var2))
 
 print(chi_square_results)
-
 ```
 
-De la prueba Chi cuadrado, se obtiene un valor de 3.66 x e-20, el valor es muy pequeño, lo cual significa que tiene una relacion significativa entre population (población) y sex (sexo). 
+Se realizó una prueba de chi-cuadrado para evaluar la posible asociación entre las variables categóricas sexo (sex) y población (Pop). El valor p obtenido fue de 1.55 × 10⁻¹⁹, un resultado extremadamente bajo que se encuentra muy por debajo del umbral común de significancia estadística (α = 0.05).
 
+Este valor p tan reducido indica que existe evidencia estadísticamente significativa para rechazar la hipótesis nula de independencia entre las variables. En otras palabras, los resultados sugieren que la variable sexo está asociada de manera significativa con la población a la que pertenece el individuo.
+
+Esto implica que la distribución de sexos no es homogénea entre las diferentes poblaciones consideradas en el estudio, lo cual podría deberse a diferencias estructurales, biológicas, geográficas u otros factores contextuales que afecten la composición poblacional.
+
+
+### 15.2 Hipótesis de correlación entre variables
 
 ```{r}
 # Asegúrate de que numeric_columns contiene nombres de columnas numéricas
@@ -771,7 +777,10 @@ rownames(cor_pvalues) <- colnames(cor_pvalues) <- numeric_columns
 print(cor_pvalues)
 
 ```
-De acuerdo con la matriz de P-values se observa que son menores a 0.05 por lo que significa que todos tienen alta relación significativa, con el resto de variables independientes. 
+
+La matriz de valores p obtenida del análisis de correlación entre variables numéricas revela que muchas de las relaciones entre medidas corporales son estadísticamente significativas, especialmente aquellas que involucran variables como hdlngth, totlngth, skullw, tail y eye, cuyos valores p extremadamente bajos indican una fuerte evidencia de correlación. Esto sugiere que estas variables podrían estar asociadas entre sí de forma estructural o funcional, y podrían ser útiles para análisis morfológicos o modelos predictivos. En contraste, algunas variables como age o earconch presentan relaciones no significativas con varias otras, lo que indica que no están necesariamente asociadas de forma directa con las dimensiones corporales. En conjunto, estos resultados permiten identificar qué variables están más relacionadas entre sí, lo que puede ser valioso para reducir la dimensionalidad del análisis o evitar problemas de multicolinealidad en modelos posteriores.
+
+###15.3 Análisis de significancia de correlación
 
 ```{r}
 
@@ -806,8 +815,7 @@ ggplot(pvalue_melted, aes(x = Var1, y = Var2, fill = significant)) +
   )
 ```
 
-De la matriz de significancia a través de los * se observa que en las variables que hay mayor significancia por el numero de *, son belly (abdomen), chest(pecho), eye(distancia del ojo con la sien), footlgth (longitud de pie), tail (tamaño de cola), totlngth (total de tamaño), y skullw (ancho del craneo).
-
+La matriz de significancia estadística de las correlaciones por pares muestra que la mayoría de las variables morfológicas presentan correlaciones estadísticamente significativas entre sí (p < 0.05), lo que indica una fuerte asociación entre las distintas dimensiones corporales como hdlngth, totlngth, tail, footlgth, chest y belly. Esto sugiere una posible dependencia estructural entre estas medidas. En cambio, variables como site y age presentan en su mayoría correlaciones no significativas, lo que indica que podrían no estar relacionadas directamente con las características físicas analizadas.
 
 ```{r}
 
@@ -862,7 +870,9 @@ ggplot(numeric_results_df, aes(x = reorder(variable, cor), y = cor,
   theme(plot.title = element_text(hjust = 0.5))
 ```
 
-Este grafico de barras, retrata la correlación de las variables continuas en relación a la variable ojetivo de tamaño de cabeza, lo cual deja con un nivel de significancia bajo al tamaño de las orejas (earconch)
+###15.4 Análisis de correlación con la variable hdlngth
+
+La gráfica muestra el coeficiente de correlación de Pearson entre la variable hdlngth (longitud de la cabeza) y otras variables cuantitativas del conjunto de datos. Las barras naranjas indican correlaciones estadísticamente significativas (p < 0.05), mientras que la barra azul representa una correlación no significativa. Las variables skullw, totlngth, chest y belly presentan las correlaciones más fuertes y significativas con hdlngth, lo que sugiere una relación directa importante entre la longitud de la cabeza y otras medidas corporales. Por otro lado, la variable earconch muestra una correlación muy baja y no significativa, lo cual indica que no guarda una relación lineal clara con la longitud de la cabeza. En general, esta gráfica evidencia que muchas dimensiones corporales están estrechamente asociadas con hdlngth, siendo útiles para entender proporciones o crecimiento corporal.
 
 
 ```{r}
@@ -958,26 +968,15 @@ ggplot(results_df, aes(x = reorder(variable, abs(effect_size)),
   coord_flip() +
   theme_minimal(base_size = 14)
 ```
+###15.4 Relación entre variable objetivo y variables categóricas
 
-Por otra parte el nivel de significancia de las variables categoricas seleccionadas, en este caso sexo y lugar de habitat, se puede observar que sexo manifiesta un nivel de significancia alto
-
-## Paso 14: Pruebas de hipótesis
-
+La gráfica muestra la relación entre la variable continua hdlngth (longitud de la cabeza) y dos variables categóricas: sex (sexo) y Pop (población), utilizando el valor p como medida de significancia estadística. El eje horizontal representa el valor negativo del logaritmo en base 10 del valor p (−log10(p-value)), lo que permite visualizar más fácilmente qué tan significativos son los resultados: valores más altos indican mayor evidencia contra la hipótesis nula. La línea punteada roja marca el umbral de significancia (p = 0.05), y todas las barras que no lo cruzan indican relaciones no significativas. En este caso, ni sex ni Pop tienen una asociación significativa con hdlngth, ya que ambas barras están por debajo del umbral de significancia. Esto sugiere que, en este conjunto de datos, la longitud de la cabeza no varía de manera estadísticamente significativa según el sexo o la población.
 
 
-## Paso 15: Modelamiento
-### Paso 15.1: Entrenamiento
+## Paso 16 Modelamiento
 
-### Paso 15.2: Pruebas de supuestos
-#### Paso 15.2.1: Supuestos de regresion lineal
-https://rpubs.com/acastro/regresion_lineal_supuestos
+### Paso 16.1 Entrenamiento
 
-1. Linealidad
-2. Normalidad
-3. Varianza constante (Homocedasticidad)
-4. Independencia
-
-Para el modelo 1 se utilizaran todas las variables independientes
 
 ```{r}
 linear_model1 <- lm(hdlngth ~ ., data = data)
@@ -991,7 +990,7 @@ Para el modelo 2 se eliminan las variables earconch y sexm
 linear_model2 <- lm(hdlngth ~ age + skullw + totlngth + taill + footlgth + eye + chest + belly + Pop, data = data)
 summary(linear_model2)
 ```
-Para el modelo 3 se selecciona las variables skullw, totlngth, taill, footlgth y Pop ya que los resultados del modelo muestra que tienen mayor signidicancia
+Para el modelo 3 se selecciona las variables skullw, totlngth, taill, footlgth y Pop ya que los resultados del modelo muestra que tienen mayor significancia
 
 ```{r}
 linear_model3 <- lm(hdlngth ~ skullw + totlngth + taill + footlgth + Pop, data = data)
@@ -1005,7 +1004,7 @@ summary(linear_model4)
 ```
 
 
-#### Paso 15.2.2: Prueba de Linealidad
+#### Paso 16.2: Prueba de Linealidad
 
 ```{r}
 # Create combined data frame
@@ -1029,9 +1028,20 @@ ggplot(residual_data, aes(x = Fitted, y = Residuals, color = Model)) +
   theme_minimal() +
   theme(legend.position = "none")
 ```
-Se puede observar que los cuatro modelos a simple vista no marcan una linea de tendencia entre los valores residuales y los valores ajustados
+La gráfica muestra la comparación entre los residuos y los valores ajustados para cuatro modelos distintos, y es útil para evaluar la linealidad y homocedasticidad (varianza constante de los errores) en modelos de regresión lineal. En un buen modelo lineal, se espera que los residuos se dispersen aleatoriamente alrededor de la línea horizontal en cero, sin mostrar patrones evidentes.
 
-#### Paso 15.2.3: Prueba de Normalidad
+Modelo 1 presenta una distribución bastante aleatoria y centrada en cero, lo que sugiere una buena adecuación del modelo y cumplimiento de los supuestos de linealidad y homocedasticidad.
+
+Modelo 2 también muestra una dispersión razonablemente uniforme, aunque se observan algunos valores atípicos y un ligero patrón en forma de abanico, lo que podría indicar cierta heterocedasticidad.
+
+Modelo 3 mantiene una forma bastante aleatoria, pero se nota una leve acumulación de residuos negativos en los valores más altos de los ajustes, lo que podría implicar una ligera infrapredicción en ese rango.
+
+Modelo 4 muestra una ligera curvatura en los residuos, lo que sugiere una posible violación del supuesto de linealidad, es decir, que la relación entre las variables podría no ser estrictamente lineal.
+
+En conjunto, el Modelo 1 parece ser el que mejor cumple con los supuestos de la regresión lineal, seguido por los modelos 2 y 3. El Modelo 4 podría beneficiarse de transformaciones o del uso de un modelo no lineal.
+
+
+#### Paso 16.3: Prueba de Normalidad
 
 ```{r}
 # Create empty list to store results
@@ -1065,7 +1075,24 @@ print(normality_summary)
 }
 ```
 
-Dado que los valores P obtenidos en la prueba estadistica Kolmogoroc-Smirnov se observa que son mayores a 0.05 por lo cual cumplen el supuesto de normalidad
+La tabla muestra los resultados de una prueba de normalidad aplicada a los residuos de cuatro modelos (probablemente la prueba de Shapiro-Wilk o una similar). El objetivo es verificar si los residuos de cada modelo siguen una distribución normal, lo cual es un supuesto fundamental en la regresión lineal para garantizar inferencias válidas.
+
+Los valores de p-value para los cuatro modelos son todos mayores a 0.05:
+
+Modelo 1: p = 0.3376
+
+Modelo 2: p = 0.5383
+
+Modelo 3: p = 0.1706
+
+Modelo 4: p = 0.1090
+
+Estos valores indican que no se rechaza la hipótesis nula de normalidad en ninguno de los casos, es decir, no hay evidencia estadísticamente significativa para afirmar que los residuos se desvían de una distribución normal. Además, todos los modelos están clasificados como “Normal” en la columna correspondiente, reforzando esta conclusión.
+
+En resumen, los residuos de los cuatro modelos pueden considerarse normalmente distribuidos, lo que sugiere que este supuesto estadístico se cumple adecuadamente y no representa un problema para el análisis.
+
+
+#### Paso 16.4 Gráficas de residuos Q&Q
 
 ```{r}
 # Create list of plots
@@ -1084,7 +1111,12 @@ plot_list <- lapply(1:4, function(i) {
 (plot_list[[1]] | plot_list[[2]]) / 
 (plot_list[[3]] | plot_list[[4]])
 ```
-De acuerdo a las graficas Q-Q se puede observar que en el modelo 1 es el que mas se aproxima a la linea de tendencia, lo que indica que los residuos puede tener una aproximación normal en comparación a los otros 3 modelos
+
+Esta gráfica muestra los gráficos Q-Q (cuantil-cuantil) para los residuos de los Modelos 1 al 4, utilizados para evaluar visualmente si los residuos siguen una distribución normal. En un gráfico Q-Q, si los puntos siguen aproximadamente la línea roja diagonal (que representa la distribución teórica normal), se puede concluir que los residuos son aproximadamente normales.
+
+En los cuatro modelos, los puntos se alinean bastante bien con la línea roja en la mayor parte del rango, aunque hay algunas pequeñas desviaciones en las colas (extremos), especialmente visibles en los Modelos 3 y 4. Sin embargo, estas desviaciones no parecen lo suficientemente pronunciadas como para indicar una fuerte violación de la normalidad.
+
+En conjunto con los resultados previos de la prueba estadística de normalidad (donde todos los modelos fueron clasificados como “Normal”), esta visualización respalda la conclusión de que los residuos de los modelos siguen una distribución aproximadamente normal, cumpliendo con uno de los supuestos fundamentales de la regresión lineal.
 ```{r}
 library(car)
 
@@ -1106,10 +1138,10 @@ for (i in 1:4) {
 par(mfrow = c(1, 1))
 ```
 
-En este gráfico se puede denotar el smooth que indica la linea de separación de los residuos en las colas, lo cual visualmente el modelo 1 sigue obteniendo el mejor rendimiento
+Esta gráfica presenta los gráficos Q-Q (cuantil-cuantil) con bandas de confianza (en rojo) para los residuos de los Modelos 1 al 4, lo cual permite evaluar visualmente la normalidad de los residuos con mayor precisión. En todos los modelos, los puntos (residuos) se alinean mayormente sobre la línea diagonal, que representa la distribución normal teórica. Además, la mayoría de los puntos caen dentro de las bandas de confianza, lo que sugiere que no hay desviaciones graves respecto a la normalidad. Aunque hay ligeras desviaciones en los extremos, especialmente en el Modelo 4, estas no parecen lo suficientemente fuertes como para rechazar la suposición de normalidad. Por tanto, esta gráfica refuerza la conclusión previa de que los residuos de todos los modelos se distribuyen aproximadamente de forma normal.
 
-#### Paso 15.2.4: Prueba de Varianza Constante
-##### Paso 15.2.4.1: Goldfeld-Quandt Test
+#### Paso 16.5: Prueba de Varianza Constante
+##### Paso 16.5.1: Goldfeld-Quandt Test
 
 ```{r}
 # Create empty list to store results
@@ -1125,7 +1157,7 @@ for (i in 1:4) {
 }
 ```
 
-Se puede observar que de acuerdo a los valores P de cada modelo en la prueba Golfeld-Quandt son menores que 0.05, por lo que indica que en los cuatro modelos hay heterocedasticidad. 
+Se puede observar que de acuerdo a los valores P de cada modelo en la prueba Golfeld-Quandt son menores que 0.05, por lo que indica que en los cuatro modelos hay heterocedasticidad.  Los resultados del test de Goldfeld-Quandt aplicados a los cuatro modelos muestran evidencia estadísticamente significativa de heterocedasticidad en todos los casos, ya que los p-valores son muy bajos (todos menores a 0.001). Esto indica que la varianza de los errores no es constante y tiende a incrementarse del primer al segundo segmento de los datos, lo cual viola uno de los supuestos fundamentales de la regresión lineal clásica.
 
 ```{r}
 plot_list <- lapply(1:4, function(i) {
@@ -1146,9 +1178,9 @@ plot_list <- lapply(1:4, function(i) {
 (plot_list[[3]] | plot_list[[4]])
 ```
 
-De acuerdo a la prueba anterior se puede observar que ningun modelo cumple el supuesto de Homocedasticidad por lo que se visualiza las varianzas dispersas y no siguen una linea de tendencia en ningun modelo
+De acuerdo a la prueba anterior se puede observar que ningún modelo cumple el supuesto de Homocedasticidad por lo que se visualiza las varianzas dispersas y no siguen una linea de tendencia en ningun modelo.
 
-##### Paso 15.2.4.2: Breusch-Pagan Test
+##### Paso 16.5.2: Breusch-Pagan Test
 
 ```{r}
 for (i in 1:4) {
@@ -1159,7 +1191,7 @@ for (i in 1:4) {
   print(bp_test)
 }
 ```
-Ahora se procede a realizar la prueba Breusch-Pagan en la cual tambien se busca determinar si hay Homocedasticidad o no. Lo cual se puede observar que solo el modelo numero 4 no cumple con esta condición ya que el valor es menor a 0.05.
+Los resultados del test de Breusch-Pagan, utilizado para detectar heterocedasticidad, muestran resultados mixtos entre los modelos. En los Modelos 1, 2 y 3 los p-valores son superiores a 0.05 (0.6345, 0.2927 y 0.07019 respectivamente), por lo que no se rechaza la hipótesis nula de homocedasticidad, indicando que no hay evidencia significativa de heterocedasticidad según este test. Sin embargo, en el Modelo 4 el p-valor es 0.001957, por debajo del umbral del 5 %, lo que sí indica presencia significativa de heterocedasticidad.
 
 
 ```{r}
@@ -1186,7 +1218,7 @@ plot_list <- lapply(1:4, function(i) {
 De acuerdo con la gráfica de residuos el modelo numero 1 concentra mayor numero de residuos, lo que indica que no hay mayor variación  en el las varianzas del modelo, en comparación al modelo 2 y 3 que también cumplen la característica de Homocedasticidad, en cambio en el modelo 4 se observa mayor ruido en los residuos.
 
 
-### Paso 15.2.5: Prueba de Independencia
+### Paso 16.5.3: Prueba de Independencia
 
 ```{r}
 # Create empty list to store results
@@ -1201,7 +1233,7 @@ for (i in 1:4) {
   print(dw_results[[i]])
 }
 ```
-Se realiza la prueba Durbin-Watson para determinar si hay correlación entre los residuos de las variables, lo cual demuestra una poca o casi nula correlación ya que el valor D-W de cada modelo es myor que 2 pero es muy cercano al valor.
+Los resultados del test de Durbin-Watson (D-W), que evalúa la presencia de autocorrelación en los residuos de un modelo de regresión, indican que no hay evidencia de autocorrelación en ninguno de los cuatro modelos. Todos los p-valores son considerablemente mayores a 0.05 (0.976, 0.958, 0.372 y 0.838), por lo que no se rechaza la hipótesis nula de que no existe autocorrelación en los errores. Además, los estadísticos D-W se encuentran cerca de 2, lo que también sugiere ausencia de autocorrelación positiva o negativa. En resumen, los residuos de los cuatro modelos parecen cumplir con el supuesto de independencia temporal, lo cual es un buen indicador de calidad del ajuste desde la perspectiva de autocorrelación.
 
 ```{r}
 plot_list <- lapply(1:4, function(i) {
@@ -1225,7 +1257,7 @@ plot_list <- lapply(1:4, function(i) {
 De acuerdo con la grafica de residuos el mejor modelo que presenta menor ruido y presenta poca heterocedasticidad es el numero 1, ya que visual y dado por el valor obtenido 2.04 es el que mejor se ajusta al comportamiento de los residuos.
 
 
-### Paso 15.3: Evaluación
+### Paso 16.6: Evaluación
 
 ```{r}
 # Función para calcular las métricas
@@ -1258,3 +1290,7 @@ print(resultados)
 
 Como verificación final se observa que el modelo que presenta mejores metricas es el numero 1 que obtiene el error MSE, MAD, MAPE mas bajo y obtiene un R2 mas alto, lo que quiere decir que el modelo tiene una explicación del 73.20%, en valor akaike es el menor, aunque el BIC en el modelo 3 lleva ventaja, por numero total de rendimiento en las metricas, el mejor es el modelo 1.
 
+
+## Paso 17 Conclusión
+
+Basándonos en las métricas de desempeño predictivo (MSE, MAD, MAPE, R², AIC y BIC), el Modelo 1 se posiciona como la mejor opción entre los cuatro. Este modelo presenta el menor Error Cuadrático Medio (MSE = 3.28), menor Error Absoluto Medio (MAD = 1.40), y menor Error Porcentual Absoluto Medio (MAPE = 1.51%), lo que indica una mayor precisión en sus predicciones. Además, tiene el mayor coeficiente de determinación (R² = 0.732), lo que sugiere que explica una mayor proporción de la variabilidad en la variable dependiente. También obtiene los valores más bajos de AIC (434.76) y BIC (471.37), lo que refuerza su superioridad en términos de ajuste y parsimonia. En conjunto, estas métricas hacen que el Modelo 1 sea el más sólido en términos tanto predictivos como estadísticos.
